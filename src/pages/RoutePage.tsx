@@ -140,6 +140,68 @@ export default function RoutePage() {
     }, 400);
   };
 
+  const generateRouteText = (): string => {
+    const district = routeArtworks[0]?.district || '';
+    const totalDist = formatDistance(routeStats.totalDistanceKm * 1000);
+    const estTime = formatWalkTime(routeStats.estimatedMinutes);
+    const lines: string[] = [];
+    lines.push(`【公共艺术漫步路线 · ${district}】`);
+    lines.push(`总距离：${totalDist} | 预计时长：约${estTime} | 作品数：${routeArtworks.length}件`);
+    lines.push('');
+    routeArtworks.forEach((artwork, index) => {
+      const rating = getArtworkRating(artwork.id!);
+      const ratingStr = rating > 0 ? ` ★${rating.toFixed(1)}` : '';
+      lines.push(`${index + 1}. ${artwork.name}`);
+      lines.push(`   ${artwork.type} · ${artwork.artist} · ${artwork.year}年${ratingStr}`);
+      if (artwork.description) {
+        lines.push(`   ${artwork.description}`);
+      }
+      if (index < routeArtworks.length - 1) {
+        const segDist = haversineDistance(
+          { latitude: artwork.lat, longitude: artwork.lng },
+          { latitude: routeArtworks[index + 1].lat, longitude: routeArtworks[index + 1].lng }
+        );
+        lines.push(`   ↓ 下一站：${formatDistance(segDist * 1000)}`);
+      }
+      lines.push('');
+    });
+    lines.push('---');
+    lines.push('由城市公共艺术装置地图系统生成');
+    return lines.join('\n');
+  };
+
+  const handleShare = async () => {
+    if (routeArtworks.length === 0) return;
+    const text = generateRouteText();
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: '公共艺术漫步路线',
+          text: text,
+        });
+      } else {
+        await navigator.clipboard.writeText(text);
+        alert('路线信息已复制到剪贴板！');
+      }
+    } catch (error) {
+      console.log('分享被取消或失败');
+    }
+  };
+
+  const handleExport = () => {
+    if (routeArtworks.length === 0) return;
+    const text = generateRouteText();
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `公共艺术漫步路线_${routeArtworks[0]?.district || ''}_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const getTypeColor = (type: string): string => {
     return TYPE_COLORS[type as ArtworkType] || '#6b7280';
   };
@@ -317,6 +379,7 @@ export default function RoutePage() {
                   size="sm"
                   className="w-full"
                   leftIcon={<Share2 className="w-4 h-4" />}
+                  onClick={handleShare}
                 >
                   分享
                 </Button>
@@ -356,7 +419,7 @@ export default function RoutePage() {
                       {routeArtworks[0]?.district} · {routeArtworks.length} 件作品 · {formatDistance(routeStats.totalDistanceKm * 1000)} · 约 {formatWalkTime(routeStats.estimatedMinutes)}
                     </p>
                   </div>
-                  <Button variant="ghost" size="sm" leftIcon={<Download className="w-4 h-4" />}>
+                  <Button variant="ghost" size="sm" leftIcon={<Download className="w-4 h-4" />} onClick={handleExport}>
                     导出
                   </Button>
                 </div>

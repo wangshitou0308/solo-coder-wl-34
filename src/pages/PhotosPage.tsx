@@ -132,6 +132,7 @@ export default function PhotosPage() {
     allPhotos.forEach(p => {
       artworkPhotos[p.artworkId] = (artworkPhotos[p.artworkId] || 0) + 1;
     });
+    const coveredArtworkCount = Object.keys(artworkPhotos).length;
     Object.entries(artworkPhotos).forEach(([artworkId, count]) => {
       const artwork = artworks.find(a => a.id === Number(artworkId));
       if (artwork) {
@@ -139,7 +140,7 @@ export default function PhotosPage() {
       }
     });
     topArtworks.sort((a, b) => b.count - a.count);
-    return { total, archiveCount, userCount, topArtworks: topArtworks.slice(0, 5) };
+    return { total, archiveCount, userCount, coveredArtworkCount, topArtworks: topArtworks.slice(0, 5) };
   }, [allPhotos, artworks]);
 
   const handleDelete = async (photo: UnifiedPhoto) => {
@@ -231,7 +232,7 @@ export default function PhotosPage() {
             <MapPin className="w-4 h-4" />
             覆盖作品数
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.topArtworks.length}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.coveredArtworkCount}</p>
         </div>
       </div>
 
