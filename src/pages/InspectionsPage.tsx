@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ClipboardCheck,
   Search,
@@ -37,6 +38,7 @@ import { formatDate, formatRelativeTime } from '@/utils/formatters';
 import { inspectionRepo } from '../../db';
 
 export default function InspectionsPage() {
+  const navigate = useNavigate();
   const { initialize, artworks, inspections, volunteers, loading, addInspection, getLongUninspectedArtworks } = useArtworkStore();
 
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -236,7 +238,12 @@ export default function InspectionsPage() {
               </h3>
               <div className="flex flex-wrap gap-2">
                 {longUninspected.slice(0, 8).map(artwork => (
-                  <Tag key={artwork.id} color="amber">
+                  <Tag
+                    key={artwork.id}
+                    color="amber"
+                    className="cursor-pointer hover:text-primary-600"
+                    onClick={() => artwork.id && navigate(`/artwork/${artwork.id}`)}
+                  >
                     {artwork.name} · {artwork.district}
                   </Tag>
                 ))}
@@ -359,7 +366,10 @@ export default function InspectionsPage() {
                     className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
                   >
                     <td className="py-3 px-4">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <p
+                        className="text-sm font-medium text-gray-900 dark:text-white cursor-pointer hover:text-primary-600"
+                        onClick={() => inspection.artworkId && navigate(`/artwork/${inspection.artworkId}`)}
+                      >
                         {getArtworkName(inspection.artworkId)}
                       </p>
                     </td>

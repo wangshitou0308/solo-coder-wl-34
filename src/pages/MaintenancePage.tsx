@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Wrench,
   Search,
@@ -31,6 +32,7 @@ import { formatDate, formatCurrency, formatRelativeTime } from '@/utils/formatte
 import { maintenanceRepo } from '../../db';
 
 export default function MaintenancePage() {
+  const navigate = useNavigate();
   const { initialize, artworks, maintenances, loading, addMaintenance } = useArtworkStore();
 
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -218,7 +220,11 @@ export default function MaintenancePage() {
         <h3 className="font-semibold text-gray-900 dark:text-white mb-3 text-sm">维护费用最高的作品 TOP 5</h3>
         <div className="flex flex-wrap gap-3">
           {stats.topCostArtworks.map(({ artworkId, cost }, idx) => (
-            <div key={artworkId} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 px-3 py-2 rounded-lg">
+            <div
+              key={artworkId}
+              className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 px-3 py-2 rounded-lg cursor-pointer hover:text-primary-600"
+              onClick={() => artworkId && navigate(`/artwork/${artworkId}`)}
+            >
               <span className={cn(
                 'w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold',
                 idx === 0 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
@@ -329,7 +335,10 @@ export default function MaintenancePage() {
                     className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
                   >
                     <td className="py-3 px-4">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <p
+                        className="text-sm font-medium text-gray-900 dark:text-white cursor-pointer hover:text-primary-600"
+                        onClick={() => record.artworkId && navigate(`/artwork/${record.artworkId}`)}
+                      >
                         {getArtworkName(record.artworkId)}
                       </p>
                     </td>

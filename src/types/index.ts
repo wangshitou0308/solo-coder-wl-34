@@ -13,6 +13,9 @@ export type {
   UserPhoto,
   Volunteer,
   Setting,
+  Submission,
+  Favorite,
+  Feedback,
   PublicArtDB,
   PublicArtDBSchema,
 } from '../db';
@@ -47,6 +50,70 @@ export enum InspectionStatus {
   SEVERE = '严重',
   /** 已拆除 */
   DEMOLISHED = '已拆除'
+}
+
+/** 投稿状态枚举 */
+export enum SubmissionStatus {
+  /** 待审核 */
+  PENDING = 'pending',
+  /** 已通过 */
+  APPROVED = 'approved',
+  /** 已拒绝 */
+  REJECTED = 'rejected'
+}
+
+/** 反馈类型枚举 */
+export enum FeedbackType {
+  /** 位置错误 */
+  LOCATION = 'location',
+  /** 信息错误 */
+  INFO = 'info',
+  /** 照片错误 */
+  PHOTO = 'photo',
+  /** 状态异常 */
+  STATUS = 'status',
+  /** 其他 */
+  OTHER = 'other'
+}
+
+/** 反馈状态枚举 */
+export enum FeedbackStatus {
+  /** 待处理 */
+  PENDING = 'pending',
+  /** 处理中 */
+  PROCESSING = 'processing',
+  /** 已解决 */
+  RESOLVED = 'resolved',
+  /** 已拒绝 */
+  REJECTED = 'rejected'
+}
+
+/** 照片分类枚举 */
+export enum PhotoCategory {
+  /** 全景 */
+  PANORAMA = '全景',
+  /** 局部细节 */
+  DETAIL = '局部',
+  /** 铭牌特写 */
+  PLAQUE = '铭牌',
+  /** 修缮前 */
+  BEFORE_RESTORE = '修缮前',
+  /** 修缮后 */
+  AFTER_RESTORE = '修缮后',
+  /** 用户上传 */
+  USER_UPLOAD = '用户上传'
+}
+
+/** 地图图层类型枚举 */
+export enum MapLayerType {
+  /** 作品类型图层 */
+  TYPE = 'type',
+  /** 状态风险图层 */
+  RISK = 'risk',
+  /** 巡查覆盖图层 */
+  COVERAGE = 'coverage',
+  /** 热门作品图层 */
+  POPULAR = 'popular'
 }
 
 /** 坐标点接口 */

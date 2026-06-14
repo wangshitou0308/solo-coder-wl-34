@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   List,
   Plus,
@@ -727,13 +728,6 @@ export default function ArtworksListPage() {
             此操作不可撤销，相关的巡查记录、维护记录和评论也将受到影响。
           </p>
         </Modal>
-      )}
-
-      {selectedArtworkId && (
-        <ArtworkDetailModal
-          artworkId={selectedArtworkId}
-          onClose={() => setSelectedArtworkId(null)}
-        />
       )}
 
       {loading && (

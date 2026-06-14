@@ -13,6 +13,7 @@ import {
   Users,
   MessageSquare,
   Image,
+  UsersRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/store/useUIStore';
@@ -25,6 +26,7 @@ const navItems = [
   { to: '/maintenance', label: '维护记录', icon: Wrench },
   { to: '/volunteers', label: '志愿者', icon: Users },
   { to: '/comments', label: '评论管理', icon: MessageSquare },
+  { to: '/community', label: '公众参与', icon: UsersRound },
   { to: '/photos', label: '照片管理', icon: Image },
   { to: '/analytics', label: '数据看板', icon: BarChart3 },
   { to: '/path', label: '导览路线', icon: Waypoints },

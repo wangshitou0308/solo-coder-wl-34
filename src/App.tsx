@@ -14,6 +14,8 @@ import VolunteersPage from '@/pages/VolunteersPage'
 import CommentsPage from '@/pages/CommentsPage'
 import PhotosPage from '@/pages/PhotosPage'
 import RoutePage from '@/pages/RoutePage'
+import ArtworkDetailPage from '@/pages/ArtworkDetailPage'
+import CommunityPage from '@/pages/CommunityPage'
 
 export default function App() {
   return (
@@ -29,6 +31,8 @@ export default function App() {
           <Route path="/comments" element={<CommentsPage />} />
           <Route path="/photos" element={<PhotosPage />} />
           <Route path="/path" element={<RoutePage />} />
+          <Route path="/artwork/:id" element={<ArtworkDetailPage />} />
+          <Route path="/community" element={<CommunityPage />} />
         </Route>
         <Route path="*" element={<div className="flex items-center justify-center min-h-screen text-2xl text-slate-600">404 - 页面不存在</div>} />
       </Routes>

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   MessageSquare,
   Search,
@@ -24,6 +25,7 @@ import { formatDate, formatRelativeTime } from '@/utils/formatters';
 import { commentRepo } from '../../db';
 
 export default function CommentsPage() {
+  const navigate = useNavigate();
   const { initialize, artworks, comments, loading } = useArtworkStore();
 
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -295,6 +297,8 @@ export default function CommentsPage() {
                           getArtworkType(comment.artworkId) === ArtworkType.FOUNTAIN ? 'blue' :
                           getArtworkType(comment.artworkId) === ArtworkType.MONUMENT ? 'red' : 'green'
                         }
+                        className="cursor-pointer hover:text-primary-600"
+                        onClick={() => comment.artworkId && navigate(`/artwork/${comment.artworkId}`)}
                       >
                         {getArtworkName(comment.artworkId)}
                       </Tag>

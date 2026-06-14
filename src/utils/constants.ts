@@ -3,7 +3,7 @@
  * 包含颜色映射、选项列表、枚举映射等全局常量
  */
 
-import { ArtworkType, InspectionStatus } from '@/types'
+import { ArtworkType, InspectionStatus, PhotoCategory, FeedbackType, MapLayerType, SubmissionStatus, FeedbackStatus } from '@/types'
 
 /** 作品类型颜色映射 */
 export const TYPE_COLORS: Record<ArtworkType, string> = {
@@ -41,6 +41,15 @@ export const STATUS_BG_COLORS: Record<InspectionStatus, string> = {
   [InspectionStatus.MODERATE]: 'rgba(245, 158, 11, 0.15)',
   [InspectionStatus.SEVERE]: 'rgba(239, 68, 68, 0.15)',
   [InspectionStatus.DEMOLISHED]: 'rgba(107, 114, 128, 0.15)'
+}
+
+/** 风险等级映射 */
+export const RISK_LEVEL: Record<InspectionStatus, number> = {
+  [InspectionStatus.GOOD]: 0,
+  [InspectionStatus.MINOR]: 1,
+  [InspectionStatus.MODERATE]: 2,
+  [InspectionStatus.SEVERE]: 3,
+  [InspectionStatus.DEMOLISHED]: 4
 }
 
 /** 问题标签选项 */
@@ -126,6 +135,48 @@ export const INSPECTION_STATUS_OPTIONS: InspectionStatus[] = [
   InspectionStatus.DEMOLISHED
 ]
 
+/** 照片分类选项 */
+export const PHOTO_CATEGORY_OPTIONS: PhotoCategory[] = [
+  PhotoCategory.PANORAMA,
+  PhotoCategory.DETAIL,
+  PhotoCategory.PLAQUE,
+  PhotoCategory.BEFORE_RESTORE,
+  PhotoCategory.AFTER_RESTORE,
+  PhotoCategory.USER_UPLOAD
+]
+
+/** 反馈类型选项 */
+export const FEEDBACK_TYPE_OPTIONS: { value: FeedbackType; label: string; description: string }[] = [
+  { value: FeedbackType.LOCATION, label: '位置错误', description: '作品经纬度或地址信息不准确' },
+  { value: FeedbackType.INFO, label: '信息错误', description: '作品名称、作者、年代、材质等信息有误' },
+  { value: FeedbackType.PHOTO, label: '照片错误', description: '照片与实际作品不符或不清晰' },
+  { value: FeedbackType.STATUS, label: '状态异常', description: '作品实际状态与记录状态不符' },
+  { value: FeedbackType.OTHER, label: '其他问题', description: '其他需要反馈的问题' }
+]
+
+/** 投稿状态选项 */
+export const SUBMISSION_STATUS_OPTIONS: { value: SubmissionStatus; label: string; color: string }[] = [
+  { value: SubmissionStatus.PENDING, label: '待审核', color: '#f59e0b' },
+  { value: SubmissionStatus.APPROVED, label: '已通过', color: '#22c55e' },
+  { value: SubmissionStatus.REJECTED, label: '已拒绝', color: '#ef4444' }
+]
+
+/** 反馈状态选项 */
+export const FEEDBACK_STATUS_OPTIONS: { value: FeedbackStatus; label: string; color: string }[] = [
+  { value: FeedbackStatus.PENDING, label: '待处理', color: '#f59e0b' },
+  { value: FeedbackStatus.PROCESSING, label: '处理中', color: '#3b82f6' },
+  { value: FeedbackStatus.RESOLVED, label: '已解决', color: '#22c55e' },
+  { value: FeedbackStatus.REJECTED, label: '已拒绝', color: '#ef4444' }
+]
+
+/** 地图图层类型选项 */
+export const MAP_LAYER_OPTIONS: { value: MapLayerType; label: string; description: string }[] = [
+  { value: MapLayerType.TYPE, label: '作品类型', description: '按作品类型显示不同颜色标记' },
+  { value: MapLayerType.RISK, label: '状态风险', description: '按风险等级显示不同颜色标记' },
+  { value: MapLayerType.COVERAGE, label: '巡查覆盖', description: '显示近期巡查覆盖情况' },
+  { value: MapLayerType.POPULAR, label: '热门作品', description: '按浏览量大小显示标记' }
+]
+
 /** 维护类型选项 */
 export const MAINTENANCE_TYPE_OPTIONS: string[] = [
   '日常维护',
@@ -186,3 +237,9 @@ export const VOLUNTEER_LEVEL_REQUIREMENTS: Record<string, number> = {
   '高级': 200,
   '专家': 500
 }
+
+/** 附近作品推荐距离(公里) */
+export const NEARBY_DISTANCE_KM = 2
+
+/** 默认用户ID(用于收藏等功能) */
+export const DEFAULT_USER_ID = 'default_user'

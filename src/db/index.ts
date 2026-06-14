@@ -8,7 +8,7 @@ export const DB_NAME = 'publicArtDB';
 /**
  * 数据库版本号常量
  */
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 /**
  * 艺术品数据类型定义
@@ -116,6 +116,57 @@ export interface Volunteer {
 }
 
 /**
+ * 居民投稿数据类型定义
+ */
+export interface Submission {
+  id?: number;
+  name: string;
+  type: string;
+  district: string;
+  address: string;
+  lat: number;
+  lng: number;
+  description: string;
+  photos: string[];
+  author: string;
+  contact: string;
+  status: 'pending' | 'approved' | 'rejected';
+  artworkId?: number;
+  reviewer?: string;
+  reviewNote?: string;
+  submittedAt: string;
+  reviewedAt?: string;
+}
+
+/**
+ * 用户收藏数据类型定义
+ */
+export interface Favorite {
+  id?: number;
+  artworkId: number;
+  userId: string;
+  createdAt: string;
+}
+
+/**
+ * 纠错反馈数据类型定义
+ */
+export interface Feedback {
+  id?: number;
+  artworkId: number;
+  type: 'location' | 'info' | 'photo' | 'status' | 'other';
+  description: string;
+  photos: string[];
+  reporter: string;
+  contact: string;
+  status: 'pending' | 'processing' | 'resolved' | 'rejected';
+  handler?: string;
+  handleNote?: string;
+  submittedAt: string;
+  handledAt?: string;
+}
+
+/**
  * 设置项数据类型定义
  */
 export interface Setting {
@@ -188,6 +239,33 @@ export interface PublicArtDBSchema extends DBSchema {
     indexes: {
       name: string;
       inspectionCount: number;
+    };
+  };
+  submissions: {
+    key: number;
+    value: Submission;
+    indexes: {
+      status: string;
+      submittedAt: string;
+      artworkId: number;
+    };
+  };
+  favorites: {
+    key: number;
+    value: Favorite;
+    indexes: {
+      artworkId: number;
+      userId: string;
+      createdAt: string;
+    };
+  };
+  feedbacks: {
+    key: number;
+    value: Feedback;
+    indexes: {
+      artworkId: number;
+      status: string;
+      submittedAt: string;
     };
   };
   settings: {
@@ -307,6 +385,39 @@ export function openPublicArtDB(): Promise<PublicArtDB> {
           keyPath: 'key',
           autoIncrement: false,
         });
+      }
+
+      // 创建居民投稿存储
+      if (!db.objectStoreNames.contains('submissions')) {
+        const submissionsStore = db.createObjectStore('submissions', {
+          keyPath: 'id',
+          autoIncrement: true,
+        });
+        submissionsStore.createIndex('status', 'status', { unique: false });
+        submissionsStore.createIndex('submittedAt', 'submittedAt', { unique: false });
+        submissionsStore.createIndex('artworkId', 'artworkId', { unique: false });
+      }
+
+      // 创建收藏存储
+      if (!db.objectStoreNames.contains('favorites')) {
+        const favoritesStore = db.createObjectStore('favorites', {
+          keyPath: 'id',
+          autoIncrement: true,
+        });
+        favoritesStore.createIndex('artworkId', 'artworkId', { unique: false });
+        favoritesStore.createIndex('userId', 'userId', { unique: false });
+        favoritesStore.createIndex('createdAt', 'createdAt', { unique: false });
+      }
+
+      // 创建纠错反馈存储
+      if (!db.objectStoreNames.contains('feedbacks')) {
+        const feedbacksStore = db.createObjectStore('feedbacks', {
+          keyPath: 'id',
+          autoIncrement: true,
+        });
+        feedbacksStore.createIndex('artworkId', 'artworkId', { unique: false });
+        feedbacksStore.createIndex('status', 'status', { unique: false });
+        feedbacksStore.createIndex('submittedAt', 'submittedAt', { unique: false });
       }
     },
   });

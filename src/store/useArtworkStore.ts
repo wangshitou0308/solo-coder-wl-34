@@ -1,8 +1,9 @@
 import { create } from 'zustand';
-import { Artwork, Inspection, Maintenance, Comment, Photo, UserPhoto, Volunteer } from '../db';
-import { artworkRepo, inspectionRepo, maintenanceRepo, commentRepo, photoRepo, userPhotoRepo, volunteerRepo } from '../../db';
+import { Artwork, Inspection, Maintenance, Comment, Photo, UserPhoto, Volunteer, Submission, Favorite, Feedback } from '../db';
+import { artworkRepo, inspectionRepo, maintenanceRepo, commentRepo, photoRepo, userPhotoRepo, volunteerRepo, submissionRepo, favoriteRepo, feedbackRepo } from '../../db';
 import { initSeedData } from '@/utils/seedData';
-import { InspectionStatus } from '@/types';
+import { InspectionStatus, SubmissionStatus, FeedbackStatus } from '@/types';
+import { DEFAULT_USER_ID } from '@/utils/constants';
 
 export interface ArtworkDetail {
   artwork: Artwork;
@@ -13,6 +14,8 @@ export interface ArtworkDetail {
   userPhotos: UserPhoto[];
   avgRating: number;
   totalCost: number;
+  isFavorited: boolean;
+  feedbacks: Feedback[];
 }
 
 export interface DashboardStats {
@@ -27,6 +30,15 @@ export interface DashboardStats {
   topArtworks: Artwork[];
 }
 
+export interface HotArtworkItem {
+  artwork: Artwork;
+  score: number;
+  viewCount: number;
+  commentCount: number;
+  favoriteCount: number;
+  photoCount: number;
+}
+
 export interface ArtworkState {
   artworks: Artwork[];
   loading: boolean;
@@ -38,6 +50,10 @@ export interface ArtworkState {
   inspections: Inspection[];
   maintenances: Maintenance[];
   comments: Comment[];
+  submissions: Submission[];
+  favorites: Favorite[];
+  feedbacks: Feedback[];
+  userPhotos: UserPhoto[];
   error: string | null;
 }
 
@@ -48,6 +64,10 @@ export interface ArtworkActions {
   loadInspections: () => Promise<void>;
   loadMaintenances: () => Promise<void>;
   loadComments: () => Promise<void>;
+  loadSubmissions: () => Promise<void>;
+  loadFavorites: () => Promise<void>;
+  loadFeedbacks: () => Promise<void>;
+  loadUserPhotos: () => Promise<void>;
   loadDetail: (id: number) => Promise<void>;
   clearDetail: () => void;
   addInspection: (data: Omit<Inspection, 'id'>) => Promise<void>;
@@ -61,6 +81,19 @@ export interface ArtworkActions {
   getDashboardStats: () => Promise<DashboardStats>;
   getArtworksByDistrict: (district: string) => Artwork[];
   getLongUninspectedArtworks: (days?: number) => Artwork[];
+  addSubmission: (data: Omit<Submission, 'id' | 'status' | 'submittedAt'>) => Promise<number>;
+  approveSubmission: (id: number, reviewer: string, reviewNote?: string) => Promise<number>;
+  rejectSubmission: (id: number, reviewer: string, reviewNote: string) => Promise<number>;
+  deleteSubmission: (id: number) => Promise<void>;
+  toggleFavorite: (artworkId: number, userId?: string) => Promise<boolean>;
+  isArtworkFavorited: (artworkId: number, userId?: string) => boolean;
+  getFavoriteArtworks: (userId?: string) => Artwork[];
+  addFeedback: (data: Omit<Feedback, 'id' | 'status' | 'submittedAt'>) => Promise<number>;
+  processFeedback: (id: number, handler: string) => Promise<number>;
+  resolveFeedback: (id: number, handler: string, handleNote: string) => Promise<number>;
+  rejectFeedback: (id: number, handler: string, handleNote: string) => Promise<number>;
+  getHotArtworks: (limit?: number) => HotArtworkItem[];
+  getNearbyArtworks: (artworkId: number, distanceKm?: number) => { artwork: Artwork; distanceKm: number }[];
 }
 
 const initialState: ArtworkState = {
@@ -74,6 +107,10 @@ const initialState: ArtworkState = {
   inspections: [],
   maintenances: [],
   comments: [],
+  submissions: [],
+  favorites: [],
+  feedbacks: [],
+  userPhotos: [],
   error: null,
 };
 
@@ -91,6 +128,10 @@ export const useArtworkStore = create<ArtworkState & ArtworkActions>((set, get) 
       await get().loadInspections();
       await get().loadMaintenances();
       await get().loadComments();
+      await get().loadSubmissions();
+      await get().loadFavorites();
+      await get().loadFeedbacks();
+      await get().loadUserPhotos();
       set({ initialized: true });
     } catch (error) {
       set({ error: error instanceof Error ? error.message : String(error) });
@@ -147,16 +188,53 @@ export const useArtworkStore = create<ArtworkState & ArtworkActions>((set, get) 
     }
   },
 
+  loadSubmissions: async () => {
+    try {
+      const submissions = await submissionRepo.getAll();
+      set({ submissions });
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error) });
+    }
+  },
+
+  loadFavorites: async () => {
+    try {
+      const favorites = await favoriteRepo.getAll();
+      set({ favorites });
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error) });
+    }
+  },
+
+  loadFeedbacks: async () => {
+    try {
+      const feedbacks = await feedbackRepo.getAll();
+      set({ feedbacks });
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error) });
+    }
+  },
+
+  loadUserPhotos: async () => {
+    try {
+      const userPhotos = await userPhotoRepo.getAll();
+      set({ userPhotos });
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error) });
+    }
+  },
+
   loadDetail: async (id: number) => {
     set({ loading: true, selectedId: id });
     try {
-      const [artwork, inspections, maintenances, comments, photos, userPhotos] = await Promise.all([
+      const [artwork, inspections, maintenances, comments, photos, userPhotos, feedbacks] = await Promise.all([
         artworkRepo.getById(id),
         inspectionRepo.getByArtworkId(id),
         maintenanceRepo.getByArtworkId(id),
         commentRepo.getByArtworkId(id),
         photoRepo.getByArtworkId(id),
         userPhotoRepo.getByArtworkId(id),
+        feedbackRepo.getByArtworkId(id),
       ]);
 
       if (!artwork) {
@@ -168,6 +246,7 @@ export const useArtworkStore = create<ArtworkState & ArtworkActions>((set, get) 
         : 0;
 
       const totalCost = maintenances.reduce((sum, m) => sum + (m.cost || 0), 0);
+      const isFavorited = get().isArtworkFavorited(id);
 
       set({
         selected: {
@@ -179,6 +258,8 @@ export const useArtworkStore = create<ArtworkState & ArtworkActions>((set, get) 
           userPhotos,
           avgRating,
           totalCost,
+          isFavorited,
+          feedbacks,
         },
       });
     } catch (error) {
@@ -242,6 +323,7 @@ export const useArtworkStore = create<ArtworkState & ArtworkActions>((set, get) 
   addUserPhoto: async (data: Omit<UserPhoto, 'id'>) => {
     try {
       await userPhotoRepo.create(data);
+      await get().loadUserPhotos();
       if (get().selectedId === data.artworkId) {
         await get().loadDetail(data.artworkId);
       }
@@ -334,9 +416,7 @@ export const useArtworkStore = create<ArtworkState & ArtworkActions>((set, get) 
       .sort((a, b) => b.inspectionCount - a.inspectionCount)
       .slice(0, 10);
 
-    const topArtworks = [...artworks]
-      .sort((a, b) => b.viewCount - a.viewCount)
-      .slice(0, 10);
+    const topArtworks = get().getHotArtworks(10).map(item => item.artwork);
 
     return {
       totalArtworks: artworks.length,
@@ -368,5 +448,191 @@ export const useArtworkStore = create<ArtworkState & ArtworkActions>((set, get) 
       )[0];
       return new Date(latest.date) < cutoffDate;
     });
+  },
+
+  addSubmission: async (data) => {
+    try {
+      const id = await submissionRepo.create({
+        ...data,
+        status: SubmissionStatus.PENDING,
+        submittedAt: new Date().toISOString(),
+      });
+      await get().loadSubmissions();
+      return id;
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error) });
+      throw error;
+    }
+  },
+
+  approveSubmission: async (id, reviewer, reviewNote) => {
+    try {
+      const submission = await submissionRepo.getById(id);
+      if (!submission) throw new Error('投稿不存在');
+      const artworkId = await artworkRepo.create({
+        name: submission.name,
+        type: submission.type,
+        year: new Date().getFullYear(),
+        material: '未知',
+        district: submission.district,
+        address: submission.address,
+        artist: submission.author,
+        description: submission.description,
+        statusLatest: InspectionStatus.GOOD,
+        lat: submission.lat,
+        lng: submission.lng,
+      });
+      const result = await submissionRepo.approve(id, artworkId, reviewer, reviewNote);
+      await get().loadSubmissions();
+      await get().loadArtworks();
+      return result;
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error) });
+      throw error;
+    }
+  },
+
+  rejectSubmission: async (id, reviewer, reviewNote) => {
+    try {
+      const result = await submissionRepo.reject(id, reviewer, reviewNote);
+      await get().loadSubmissions();
+      return result;
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error) });
+      throw error;
+    }
+  },
+
+  deleteSubmission: async (id) => {
+    try {
+      await submissionRepo.delete(id);
+      await get().loadSubmissions();
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error) });
+    }
+  },
+
+  toggleFavorite: async (artworkId, userId = DEFAULT_USER_ID) => {
+    try {
+      const result = await favoriteRepo.toggle(artworkId, userId);
+      await get().loadFavorites();
+      if (get().selectedId === artworkId) {
+        const selected = get().selected;
+        if (selected) {
+          set({
+            selected: { ...selected, isFavorited: result.favorited },
+          });
+        }
+      }
+      return result.favorited;
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error) });
+      throw error;
+    }
+  },
+
+  isArtworkFavorited: (artworkId, userId = DEFAULT_USER_ID) => {
+    return get().favorites.some(f => f.artworkId === artworkId && f.userId === userId);
+  },
+
+  getFavoriteArtworks: (userId = DEFAULT_USER_ID) => {
+    const { favorites, artworks } = get();
+    const favIds = new Set(favorites.filter(f => f.userId === userId).map(f => f.artworkId));
+    return artworks.filter(a => a.id !== undefined && favIds.has(a.id));
+  },
+
+  addFeedback: async (data) => {
+    try {
+      const id = await feedbackRepo.create({
+        ...data,
+        status: FeedbackStatus.PENDING,
+        submittedAt: new Date().toISOString(),
+      });
+      await get().loadFeedbacks();
+      if (get().selectedId === data.artworkId) {
+        await get().loadDetail(data.artworkId);
+      }
+      return id;
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error) });
+      throw error;
+    }
+  },
+
+  processFeedback: async (id, handler) => {
+    try {
+      const result = await feedbackRepo.process(id, handler);
+      await get().loadFeedbacks();
+      return result;
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error) });
+      throw error;
+    }
+  },
+
+  resolveFeedback: async (id, handler, handleNote) => {
+    try {
+      const result = await feedbackRepo.resolve(id, handler, handleNote);
+      await get().loadFeedbacks();
+      return result;
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error) });
+      throw error;
+    }
+  },
+
+  rejectFeedback: async (id, handler, handleNote) => {
+    try {
+      const result = await feedbackRepo.reject(id, handler, handleNote);
+      await get().loadFeedbacks();
+      return result;
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error) });
+      throw error;
+    }
+  },
+
+  getHotArtworks: (limit = 10) => {
+    const { artworks, comments, favorites, userPhotos } = get();
+    const items: HotArtworkItem[] = artworks.map(artwork => {
+      const commentCount = comments.filter(c => c.artworkId === artwork.id).length;
+      const favoriteCount = favorites.filter(f => f.artworkId === artwork.id).length;
+      const photoCount = userPhotos.filter(p => p.artworkId === artwork.id).length;
+      const score =
+        (artwork.viewCount || 0) * 1 +
+        commentCount * 5 +
+        favoriteCount * 3 +
+        photoCount * 2;
+      return {
+        artwork,
+        score,
+        viewCount: artwork.viewCount || 0,
+        commentCount,
+        favoriteCount,
+        photoCount,
+      };
+    });
+    return items.sort((a, b) => b.score - a.score).slice(0, limit);
+  },
+
+  getNearbyArtworks: (artworkId, distanceKm = 2) => {
+    const { artworks } = get();
+    const current = artworks.find(a => a.id === artworkId);
+    if (!current) return [];
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
+    return artworks
+      .filter(a => a.id !== artworkId && a.id !== undefined)
+      .map(artwork => {
+        const R = 6371;
+        const dLat = toRad(artwork.lat - current.lat);
+        const dLng = toRad(artwork.lng - current.lng);
+        const a =
+          Math.sin(dLat / 2) ** 2 +
+          Math.cos(toRad(current.lat)) * Math.cos(toRad(artwork.lat)) * Math.sin(dLng / 2) ** 2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return { artwork, distanceKm: R * c };
+      })
+      .filter(item => item.distanceKm <= distanceKm)
+      .sort((a, b) => a.distanceKm - b.distanceKm);
   },
 }));

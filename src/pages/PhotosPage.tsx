@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Image,
   Search,
@@ -35,6 +36,7 @@ type UnifiedPhoto = {
 };
 
 export default function PhotosPage() {
+  const navigate = useNavigate();
   const { initialize, artworks, loading } = useArtworkStore();
 
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -316,7 +318,13 @@ export default function PhotosPage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                 <div className="absolute bottom-0 left-0 right-0 p-2.5">
-                  <p className="text-white text-xs font-medium truncate">
+                  <p
+                    className="text-white text-xs font-medium truncate cursor-pointer hover:text-primary-300"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      photo.artworkId && navigate(`/artwork/${photo.artworkId}`);
+                    }}
+                  >
                     {getArtworkName(photo.artworkId)}
                   </p>
                   <div className="flex items-center justify-between mt-1">
@@ -362,7 +370,13 @@ export default function PhotosPage() {
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className="font-medium text-gray-900 dark:text-white">
+                  <span
+                    className="font-medium text-gray-900 dark:text-white cursor-pointer hover:text-primary-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      photo.artworkId && navigate(`/artwork/${photo.artworkId}`);
+                    }}
+                  >
                     {getArtworkName(photo.artworkId)}
                   </span>
                   <Tag color={photo.source === 'archive' ? 'blue' : 'purple'}>
@@ -414,7 +428,12 @@ export default function PhotosPage() {
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-2">
                 <Image className="w-5 h-5 text-primary-600" />
-                <span>{getArtworkName(selectedPhoto.artworkId)}</span>
+                <span
+                  className="cursor-pointer hover:text-primary-600"
+                  onClick={() => selectedPhoto.artworkId && navigate(`/artwork/${selectedPhoto.artworkId}`)}
+                >
+                  {getArtworkName(selectedPhoto.artworkId)}
+                </span>
               </div>
               <button
                 className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"

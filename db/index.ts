@@ -4,6 +4,9 @@ import { MaintenanceRepository } from '../src/db/repositories/maintenance';
 import { CommentRepository } from '../src/db/repositories/comment';
 import { PhotoRepository, UserPhotoRepository } from '../src/db/repositories/photo';
 import { VolunteerRepository } from '../src/db/repositories/volunteer';
+import { SubmissionRepository } from '../src/db/repositories/submission';
+import { FavoriteRepository } from '../src/db/repositories/favorite';
+import { FeedbackRepository } from '../src/db/repositories/feedback';
 
 /**
  * 艺术品仓库单例实例
@@ -41,6 +44,21 @@ export const userPhotoRepo = new UserPhotoRepository();
 export const volunteerRepo = new VolunteerRepository();
 
 /**
+ * 居民投稿仓库单例实例
+ */
+export const submissionRepo = new SubmissionRepository();
+
+/**
+ * 收藏仓库单例实例
+ */
+export const favoriteRepo = new FavoriteRepository();
+
+/**
+ * 纠错反馈仓库单例实例
+ */
+export const feedbackRepo = new FeedbackRepository();
+
+/**
  * 导出数据库核心类型和方法
  */
 export {
@@ -59,6 +77,9 @@ export type {
   UserPhoto,
   Volunteer,
   Setting,
+  Submission,
+  Favorite,
+  Feedback,
   PublicArtDB,
   PublicArtDBSchema,
 } from '../src/db';
