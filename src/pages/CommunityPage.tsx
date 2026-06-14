@@ -305,7 +305,7 @@ export default function CommunityPage() {
 
   const handleViewArtworkDetail = (artworkId: number) => {
     incrementViewCount(artworkId);
-    navigate(`/artworks/${artworkId}`);
+    navigate(`/artwork/${artworkId}`);
   };
 
   const validateFeedbackForm = (): boolean => {

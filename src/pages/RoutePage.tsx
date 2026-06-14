@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Map as MapIcon,
   Search,
@@ -40,6 +41,7 @@ type LocatableArtwork = {
 
 export default function RoutePage() {
   const { initialize, artworks, comments, loading } = useArtworkStore();
+  const [searchParams] = useSearchParams();
 
   const [selectedDistrict, setSelectedDistrict] = useState<string>('全部区域');
   const [selectedTypes, setSelectedTypes] = useState<ArtworkType[]>([]);
@@ -47,10 +49,34 @@ export default function RoutePage() {
   const [startPointId, setStartPointId] = useState<string>('');
   const [routeArtworks, setRouteArtworks] = useState<Artwork[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [appliedUrlIds, setAppliedUrlIds] = useState<string>('');
 
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  useEffect(() => {
+    const idsParam = searchParams.get('ids');
+    if (!idsParam || idsParam === appliedUrlIds) return;
+    if (artworks.length === 0) return;
+
+    const ids = idsParam.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n));
+    if (ids.length === 0) return;
+
+    const picked = artworks.filter(a => a.id !== undefined && ids.includes(a.id));
+    if (picked.length === 0) return;
+
+    const locatable: LocatableArtwork[] = picked
+      .map(toLocatable)
+      .filter((a): a is LocatableArtwork => a !== null);
+
+    if (locatable.length > 0) {
+      const result = nearestNeighborRoute(locatable, locatable[0], false);
+      const ordered: Artwork[] = result.orderedPoints.map(p => (p as LocatableArtwork).artwork);
+      setRouteArtworks(ordered);
+      setAppliedUrlIds(idsParam);
+    }
+  }, [searchParams, artworks, appliedUrlIds]);
 
   const getArtworkRating = (artworkId: number): number => {
     const artworkComments = comments.filter(c => c.artworkId === artworkId);
